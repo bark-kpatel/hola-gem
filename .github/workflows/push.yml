@@ -1,0 +1,25 @@
+name: Push Create Tag
+on:
+  push:
+    branches:
+      - 'main'
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: ruby/setup-ruby@v1
+      - name: Build gemspec
+        run: gem build hola.gemspec
+      - name: 💎 Extract gemspec info
+        id: gemspec_fetch
+        uses: bitbrain/gemspec-fetch@1.0.0
+        with:
+          specfile: hola.gemspec
+      - name: Fetch tags
+        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+      - name: Check gem version has existing git tag
+        run: >-
+          ( git show-ref --tags --verify --quiet -- "refs/tags/v${{ steps.gemspec_fetch.outputs.version }}" && exit 1 )
+          || 
+          ( git tag "v${{ steps.gemspec_fetch.outputs.version }}" && git push origin "v${{ steps.gemspec_fetch.outputs.version }}" )
