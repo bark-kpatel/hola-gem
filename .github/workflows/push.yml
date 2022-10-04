@@ -7,29 +7,23 @@ jobs:
   tag:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: ruby/setup-ruby@v1
-      - name: Build gemspec
-        run: gem build hola.gemspec
-      - name: 💎 Extract gemspec info
-        id: gemspec_fetch
-        uses: bitbrain/gemspec-fetch@1.0.0
-        with:
-          specfile: hola.gemspec
-      - name: Fetch tags
-        run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
-      - name: Check gem version has existing git tag
-        run: >-
-          ( git show-ref --tags --verify --quiet -- "refs/tags/v${{ steps.gemspec_fetch.outputs.version }}" && exit 1 )
-          || 
-          ( git tag "v${{ steps.gemspec_fetch.outputs.version }}" && git push origin "v${{ steps.gemspec_fetch.outputs.version }}" )
       - uses: GoogleCloudPlatform/release-please-action@v2
         id: release
         with:
           release-type: ruby
           package-name: hola-gem
           version-file: "lib/hola/version.rb"
+      - uses: actions/checkout@v3
+        if: ${{ steps.release.outputs.release_created }}
+      - name: Create tag for version
+        if: ${{ steps.release.outputs.release_created }}
+        run: |
+          git tag ${{ steps.release.outputs.tag_name }} || true
+          git push origin ${{ steps.release.outputs.tag_name }}
+      - uses: ruby/setup-ruby@v1
+        if: ${{ steps.release.outputs.release_created }}
       - name: Publish to GPR
+        if: ${{ steps.release.outputs.release_created }}
         run: |
           mkdir -p $HOME/.gem
           touch $HOME/.gem/credentials
