@@ -1,14 +1,10 @@
-name: pull-request-version-tag-check
-on: 
+name: Pull Request Version Tag Check
+on:
   pull_request:
-    types:
-      - opened
-      - edited
-      - reopened
     branches:
       - 'main'
 jobs:
-  build:
+  check:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -23,4 +19,4 @@ jobs:
       - name: Fetch tags
         run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
       - name: Check gem version has existing git tag
-        run: git show-ref --tags --verify --quiet -- "refs/tags/v${{ steps.gemspec_fetch.outputs.version }}" && exit 0 || exit 1
+        run: git show-ref --tags --verify --quiet -- "refs/tags/v${{ steps.gemspec_fetch.outputs.version }}" && exit 1 || exit 0
